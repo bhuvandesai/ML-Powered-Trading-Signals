@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlgoTrade Pro - ML Trading Signals</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #050508;
+            --bg-secondary: #0c0c12;
+            --bg-card: #111118;
+            --bg-hover: #1a1a24;
+            --accent-green: #22c55e;
+            --accent-green-bright: #4ade80;
+            --accent-red: #ef4444;
+            --accent-red-bright: #f87171;
+            --accent-blue: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --accent-purple: #a855f7;
+            --accent-amber: #f59e0b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #475569;
+            --border-color: #1e293b;
+            --border-highlight: #334155;
+        }
+
+        body {
+            font-family: 'Instrument Sans', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        /* Subtle grid background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: 
+                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(34, 197, 94, 0.08), transparent),
+                linear-gradient(rgba(34, 197, 94, 0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(34, 197, 94, 0.015) 1px, transparent 1px);
+            background-size: 100% 100%, 60px 60px, 60px 60px;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .app {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            margin-bottom: 32px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .brand-logo {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-cyan));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 18px;
+            color: #000;
+        }
+
+        .brand-name {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .brand-tag {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 500;
+        }
+
+        .header-info {
+            display: flex;
+            gap: 32px;
+        }
+
+        .header-stat {
+            text-align: right;
+        }
+
+        .header-stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .header-stat-value {
+            font-size: 15px;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-primary);
+        }
+
+        /* Stock Tabs */
+        .stock-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 28px;
+        }
+
+        .stock-tab {
+            padding: 10px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .stock-tab:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            border-color: var(--border-highlight);
+        }
+
+        .stock-tab.active {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(6, 182, 212, 0.1));
+            border-color: var(--accent-green);
+            color: var(--accent-green-bright);
+        }
+
+        /* Main Layout */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 24px;
+        }
+
+        @media (max-width: 1280px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-primary);
+        }
+
+        .card-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .card-body {
+            padding: 24px;
+        }
+
+        /* Price Header */
+        .price-header {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+        }
+
+        .price-current {
+            font-size: 40px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: -1px;
+        }
+
+        .price-change {
+            font-size: 16px;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+            padding: 6px 12px;
+            border-radius: 6px;
+        }
+
+        .price-change.up {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--accent-green-bright);
+        }
+
+        .price-change.down {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--accent-red-bright);
+        }
+
+        /* Chart */
+        .chart-wrap {
+            height: 380px;
+            margin-top: 20px;
+        }
+
+        /* Signal Display */
+        .signal-display {
+            text-align: center;
+            padding: 32px 24px;
+        }
+
+        .signal-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px 48px;
+            border-radius: 14px;
+            font-size: 32px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+        }
+
+        .signal-badge.buy {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.25), rgba(34, 197, 94, 0.1));
+            color: var(--accent-green-bright);
+            border: 2px solid var(--accent-green);
+            box-shadow: 0 0 40px rgba(34, 197, 94, 0.2);
+            animation: glow-green 2s ease-in-out infinite;
+        }
+
+        .signal-badge.sell {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(239, 68, 68, 0.1));
+            color: var(--accent-red-bright);
+            border: 2px solid var(--accent-red);
+            box-shadow: 0 0 40px rgba(239, 68, 68, 0.2);
+            animation: glow-red 2s ease-in-out infinite;
+        }
+
+        .signal-badge.hold {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(59, 130, 246, 0.1));
+            color: var(--accent-blue);
+            border: 2px solid var(--accent-blue);
+            box-shadow: 0 0 40px rgba(59, 130, 246, 0.15);
+        }
+
+        @keyframes glow-green {
+            0%, 100% { box-shadow: 0 0 30px rgba(34, 197, 94, 0.2); }
+            50% { box-shadow: 0 0 50px rgba(34, 197, 94, 0.4); }
+        }
+
+        @keyframes glow-red {
+            0%, 100% { box-shadow: 0 0 30px rgba(239, 68, 68, 0.2); }
+            50% { box-shadow: 0 0 50px rgba(239, 68, 68, 0.4); }
+        }
+
+        /* Confidence */
+        .confidence-section {
+            margin-top: 28px;
+        }
+
+        .confidence-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 12px;
+        }
+
+        .confidence-track {
+            height: 10px;
+            background: var(--bg-card);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+            border-radius: 5px;
+            transition: width 0.6s ease;
+        }
+
+        .confidence-value {
+            font-size: 28px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            margin-top: 12px;
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Analysis Tags */
+        .analysis-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 24px;
+            justify-content: center;
+        }
+
+        .analysis-tag {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .analysis-tag.bullish {
+            background: rgba(34, 197, 94, 0.12);
+            color: var(--accent-green-bright);
+            border: 1px solid rgba(34, 197, 94, 0.25);
+        }
+
+        .analysis-tag.bearish {
+            background: rgba(239, 68, 68, 0.12);
+            color: var(--accent-red-bright);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+        }
+
+        .analysis-tag.neutral {
+            background: rgba(59, 130, 246, 0.12);
+            color: var(--accent-blue);
+            border: 1px solid rgba(59, 130, 246, 0.25);
+        }
+
+        /* Model Stats */
+        .model-stats {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .accuracy-ring {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: conic-gradient(var(--accent-green) calc(var(--pct) * 3.6deg), var(--bg-primary) 0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .accuracy-ring-inner {
+            width: 44px;
+            height: 44px;
+            background: var(--bg-card);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .model-info-text {
+            text-align: left;
+        }
+
+        .model-info-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .model-info-detail {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Indicators Grid */
+        .indicators-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        @media (max-width: 900px) {
+            .indicators-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .indicator-box {
+            background: var(--bg-card);
+            padding: 16px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        .indicator-name {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .indicator-value {
+            font-size: 18px;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .indicator-status {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-top: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .indicator-status.bullish {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--accent-green-bright);
+        }
+
+        .indicator-status.bearish {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--accent-red-bright);
+        }
+
+        .indicator-status.neutral {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--accent-blue);
+        }
+
+        /* Price Targets */
+        .targets-grid {
+            display: grid;
+            gap: 10px;
+        }
+
+        .target-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .target-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .target-price {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .target-price.green { color: var(--accent-green-bright); }
+        .target-price.red { color: var(--accent-red-bright); }
+
+        /* Backtest */
+        .backtest-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .backtest-box {
+            background: var(--bg-card);
+            padding: 18px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .backtest-value {
+            font-size: 24px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .backtest-value.positive { color: var(--accent-green-bright); }
+        .backtest-value.negative { color: var(--accent-red-bright); }
+
+        .backtest-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 6px;
+        }
+
+        /* Feature Importance */
+        .feature-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .feature-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .feature-name {
+            width: 90px;
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-muted);
+        }
+
+        .feature-track {
+            flex: 1;
+            height: 6px;
+            background: var(--bg-card);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .feature-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-purple), var(--accent-cyan));
+            border-radius: 3px;
+        }
+
+        .feature-pct {
+            width: 40px;
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            text-align: right;
+            color: var(--text-secondary);
+        }
+
+        /* Right Panel */
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Loading */
+        .loading-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 80px 20px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--accent-green);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-top: 16px;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--border-highlight); }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+
+        // ============================================
+        // TECHNICAL INDICATORS (Client-side)
+        // ============================================
+        
+        const TechnicalIndicators = {
+            sma: (data, period) => {
+                const result = [];
+                for (let i = 0; i < data.length; i++) {
+                    if (i < period - 1) {
+                        result.push(null);
+                    } else {
+                        const slice = data.slice(i - period + 1, i + 1);
+                        result.push(slice.reduce((a, b) => a + b, 0) / period);
+                    }
+                }
+                return result;
+            },
+            
+            ema: (data, period) => {
+                const k = 2 / (period + 1);
+                const result = [data[0]];
+                for (let i = 1; i < data.length; i++) {
+                    result.push(data[i] * k + result[i-1] * (1 - k));
+                }
+                return result;
+            },
+            
+            rsi: (data, period = 14) => {
+                const result = [];
+                const gains = [];
+                const losses = [];
+                
+                for (let i = 0; i < data.length; i++) {
+                    if (i === 0) {
+                        result.push(null);
+                        continue;
+                    }
+                    
+                    const change = data[i] - data[i-1];
+                    gains.push(Math.max(change, 0));
+                    losses.push(Math.max(-change, 0));
+                    
+                    if (i < period) {
+                        result.push(null);
+                    } else {
+                        const avgGain = gains.slice(-period).reduce((a,b) => a+b, 0) / period;
+                        const avgLoss = losses.slice(-period).reduce((a,b) => a+b, 0) / period;
+                        const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+                        result.push(100 - (100 / (1 + rs)));
+                    }
+                }
+                return result;
+            },
+            
+            macd: (data, fast = 12, slow = 26, signal = 9) => {
+                const emaFast = TechnicalIndicators.ema(data, fast);
+                const emaSlow = TechnicalIndicators.ema(data, slow);
+                const macdLine = emaFast.map((v, i) => v - emaSlow[i]);
+                const signalLine = TechnicalIndicators.ema(macdLine, signal);
+                const histogram = macdLine.map((v, i) => v - signalLine[i]);
+                return { macd: macdLine, signal: signalLine, histogram };
+            },
+            
+            bollingerBands: (data, period = 20, stdDev = 2) => {
+                const sma = TechnicalIndicators.sma(data, period);
+                const upper = [];
+                const lower = [];
+                
+                for (let i = 0; i < data.length; i++) {
+                    if (i < period - 1) {
+                        upper.push(null);
+                        lower.push(null);
+                    } else {
+                        const slice = data.slice(i - period + 1, i + 1);
+                        const mean = slice.reduce((a,b) => a+b, 0) / period;
+                        const variance = slice.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / period;
+                        const std = Math.sqrt(variance);
+                        upper.push(sma[i] + stdDev * std);
+                        lower.push(sma[i] - stdDev * std);
+                    }
+                }
+                return { upper, middle: sma, lower };
+            },
+            
+            stochastic: (high, low, close, kPeriod = 14, dPeriod = 3) => {
+                const k = [];
+                for (let i = 0; i < close.length; i++) {
+                    if (i < kPeriod - 1) {
+                        k.push(null);
+                    } else {
+                        const highSlice = high.slice(i - kPeriod + 1, i + 1);
+                        const lowSlice = low.slice(i - kPeriod + 1, i + 1);
+                        const hh = Math.max(...highSlice);
+                        const ll = Math.min(...lowSlice);
+                        k.push(hh === ll ? 50 : ((close[i] - ll) / (hh - ll)) * 100);
+                    }
+                }
+                const d = TechnicalIndicators.sma(k.map(v => v ?? 50), dPeriod);
+                return { k, d };
+            },
+            
+            williamsR: (high, low, close, period = 14) => {
+                const result = [];
+                for (let i = 0; i < close.length; i++) {
+                    if (i < period - 1) {
+                        result.push(null);
+                    } else {
+                        const hh = Math.max(...high.slice(i - period + 1, i + 1));
+                        const ll = Math.min(...low.slice(i - period + 1, i + 1));
+                        result.push(hh === ll ? -50 : -100 * ((hh - close[i]) / (hh - ll)));
+                    }
+                }
+                return result;
+            },
+            
+            cci: (high, low, close, period = 20) => {
+                const tp = close.map((c, i) => (high[i] + low[i] + c) / 3);
+                const smaTP = TechnicalIndicators.sma(tp, period);
+                const result = [];
+                
+                for (let i = 0; i < tp.length; i++) {
+                    if (i < period - 1) {
+                        result.push(null);
+                    } else {
+                        const slice = tp.slice(i - period + 1, i + 1);
+                        const mean = slice.reduce((a,b) => a+b, 0) / period;
+                        const mad = slice.reduce((sum, val) => sum + Math.abs(val - mean), 0) / period;
+                        result.push(mad === 0 ? 0 : (tp[i] - smaTP[i]) / (0.015 * mad));
+                    }
+                }
+                return result;
+            },
+            
+            atr: (high, low, close, period = 14) => {
+                const tr = [];
+                for (let i = 0; i < close.length; i++) {
+                    if (i === 0) {
+                        tr.push(high[i] - low[i]);
+                    } else {
+                        tr.push(Math.max(
+                            high[i] - low[i],
+                            Math.abs(high[i] - close[i-1]),
+                            Math.abs(low[i] - close[i-1])
+                        ));
+                    }
+                }
+                return TechnicalIndicators.sma(tr, period);
+            }
+        };
+
+        // ============================================
+        // ML MODEL (Simplified client-side)
+        // ============================================
+        
+        class SimplifiedMLModel {
+            constructor() {
+                this.weights = {};
+            }
+            
+            extractFeatures(data, i) {
+                if (i < 50) return null;
+                
+                const closes = data.slice(0, i + 1).map(d => d.close);
+                const highs = data.slice(0, i + 1).map(d => d.high);
+                const lows = data.slice(0, i + 1).map(d => d.low);
+                
+                const rsi = TechnicalIndicators.rsi(closes)[i];
+                const macd = TechnicalIndicators.macd(closes);
+                const stoch = TechnicalIndicators.stochastic(highs, lows, closes);
+                const willR = TechnicalIndicators.williamsR(highs, lows, closes)[i];
+                const cci = TechnicalIndicators.cci(highs, lows, closes)[i];
+                const atr = TechnicalIndicators.atr(highs, lows, closes)[i];
+                
+                const priceChange = (closes[i] - closes[i-1]) / closes[i-1];
+                const priceChange5 = (closes[i] - closes[i-5]) / closes[i-5];
+                const volatility = this.calculateVolatility(closes.slice(-20));
+                
+                const sma20 = closes.slice(-20).reduce((a,b) => a+b, 0) / 20;
+                const sma50 = closes.slice(-50).reduce((a,b) => a+b, 0) / 50;
+                
+                return {
+                    rsi: rsi || 50,
+                    macd: macd.macd[i] || 0,
+                    macdSignal: macd.signal[i] || 0,
+                    macdHist: macd.histogram[i] || 0,
+                    stochK: stoch.k[i] || 50,
+                    stochD: stoch.d[i] || 50,
+                    williamsR: willR || -50,
+                    cci: cci || 0,
+                    atr: atr || 1,
+                    priceChange,
+                    priceChange5,
+                    volatility,
+                    priceSma20Ratio: closes[i] / sma20,
+                    priceSma50Ratio: closes[i] / sma50,
+                    sma20Sma50Ratio: sma20 / sma50
+                };
+            }
+            
+            calculateVolatility(prices) {
+                const returns = [];
+                for (let i = 1; i < prices.length; i++) {
+                    returns.push((prices[i] - prices[i-1]) / prices[i-1]);
+                }
+                const mean = returns.reduce((a,b) => a+b, 0) / returns.length;
+                const variance = returns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / returns.length;
+                return Math.sqrt(variance);
+            }
+            
+            train(data) {
+                // Simple rule-based scoring with learned weights
+                const results = { correct: 0, total: 0 };
+                
+                for (let i = 55; i < data.length - 5; i++) {
+                    const features = this.extractFeatures(data, i);
+                    if (!features) continue;
+                    
+                    // Calculate future return
+                    const futureReturn = (data[i + 5].close - data[i].close) / data[i].close;
+                    const actualSignal = futureReturn > 0.02 ? 1 : (futureReturn < -0.02 ? -1 : 0);
+                    
+                    const prediction = this.predict(features);
+                    if (prediction.signal === actualSignal) results.correct++;
+                    results.total++;
+                }
+                
+                return {
+                    accuracy: results.total > 0 ? (results.correct / results.total * 100).toFixed(2) : 0,
+                    samples: results.total
+                };
+            }
+            
+            predict(features) {
+                let score = 0;
+                
+                // RSI signals
+                if (features.rsi < 30) score += 2;
+                else if (features.rsi > 70) score -= 2;
+                else if (features.rsi < 40) score += 1;
+                else if (features.rsi > 60) score -= 1;
+                
+                // MACD signals
+                if (features.macdHist > 0 && features.macd > features.macdSignal) score += 2;
+                else if (features.macdHist < 0 && features.macd < features.macdSignal) score -= 2;
+                
+                // Stochastic signals
+                if (features.stochK < 20) score += 1.5;
+                else if (features.stochK > 80) score -= 1.5;
+                
+                // Williams %R
+                if (features.williamsR < -80) score += 1;
+                else if (features.williamsR > -20) score -= 1;
+                
+                // CCI signals
+                if (features.cci < -100) score += 1;
+                else if (features.cci > 100) score -= 1;
+                
+                // Trend signals
+                if (features.priceSma20Ratio > 1 && features.sma20Sma50Ratio > 1) score += 1.5;
+                else if (features.priceSma20Ratio < 1 && features.sma20Sma50Ratio < 1) score -= 1.5;
+                
+                // Momentum
+                if (features.priceChange5 > 0.03) score += 1;
+                else if (features.priceChange5 < -0.03) score -= 1;
+                
+                // Determine signal
+                const signal = score > 2 ? 1 : (score < -2 ? -1 : 0);
+                const confidence = Math.min(95, 50 + Math.abs(score) * 5);
+                
+                return { signal, confidence, score };
+            }
+        }
+
+        // ============================================
+        // API CONFIGURATION
+        // ============================================
+        
+        const API_BASE_URL = 'http://localhost:5001';
+        
+        // ============================================
+        // API FUNCTIONS
+        // ============================================
+        
+        const fetchStockData = async (symbol) => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/stock/${symbol}`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const data = await response.json();
+                return data.data || [];
+            } catch (error) {
+                console.error('Error fetching stock data:', error);
+                throw error;
+            }
+        };
+        
+        const fetchPrediction = async (symbol) => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/predict/${symbol}`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching prediction:', error);
+                throw error;
+            }
+        };
+        
+        const fetchIndicators = async (symbol) => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/indicators/${symbol}`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching indicators:', error);
+                throw error;
+            }
+        };
+        
+        const fetchBacktest = async (symbol) => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/backtest/${symbol}`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching backtest:', error);
+                throw error;
+            }
+        };
+
+        // ============================================
+        // STOCKS
+        // ============================================
+        
+        const STOCKS = [
+            { symbol: 'AAPL', name: 'Apple' },
+            { symbol: 'GOOGL', name: 'Google' },
+            { symbol: 'MSFT', name: 'Microsoft' },
+            { symbol: 'AMZN', name: 'Amazon' },
+            { symbol: 'TSLA', name: 'Tesla' },
+            { symbol: 'META', name: 'Meta' },
+            { symbol: 'NVDA', name: 'NVIDIA' },
+            { symbol: 'AMD', name: 'AMD' },
+            { symbol: 'NFLX', name: 'Netflix' },
+            { symbol: 'JPM', name: 'JPMorgan' },
+        ];
+
+        // ============================================
+        // COMPONENTS
+        // ============================================
+        
+        const Loading = ({ text }) => (
+            <div className="loading-state">
+                <div className="spinner"></div>
+                <div className="loading-text">{text || 'Analyzing...'}</div>
+            </div>
+        );
+
+        const PriceChart = ({ data }) => {
+            const chartRef = useRef(null);
+            const chartInstance = useRef(null);
+
+            useEffect(() => {
+                if (!data || !data.length) return;
+
+                const ctx = chartRef.current.getContext('2d');
+                if (chartInstance.current) chartInstance.current.destroy();
+
+                const closes = data.map(d => d.close);
+                const sma20 = TechnicalIndicators.sma(closes, 20);
+                const sma50 = TechnicalIndicators.sma(closes, 50);
+                const bb = TechnicalIndicators.bollingerBands(closes);
+
+                chartInstance.current = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.map(d => d.date),
+                        datasets: [
+                            {
+                                label: 'Price',
+                                data: closes,
+                                borderColor: '#22c55e',
+                                backgroundColor: 'rgba(34, 197, 94, 0.08)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 0,
+                            },
+                            {
+                                label: 'SMA 20',
+                                data: sma20,
+                                borderColor: '#3b82f6',
+                                borderWidth: 1.5,
+                                borderDash: [4, 4],
+                                pointRadius: 0,
+                                fill: false,
+                            },
+                            {
+                                label: 'SMA 50',
+                                data: sma50,
+                                borderColor: '#a855f7',
+                                borderWidth: 1.5,
+                                borderDash: [4, 4],
+                                pointRadius: 0,
+                                fill: false,
+                            },
+                            {
+                                label: 'BB Upper',
+                                data: bb.upper,
+                                borderColor: 'rgba(245, 158, 11, 0.4)',
+                                borderWidth: 1,
+                                pointRadius: 0,
+                                fill: false,
+                            },
+                            {
+                                label: 'BB Lower',
+                                data: bb.lower,
+                                borderColor: 'rgba(245, 158, 11, 0.4)',
+                                borderWidth: 1,
+                                pointRadius: 0,
+                                fill: false,
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { intersect: false, mode: 'index' },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: {
+                                    color: '#94a3b8',
+                                    font: { family: 'JetBrains Mono', size: 10 },
+                                    usePointStyle: true,
+                                    padding: 16,
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: '#111118',
+                                titleColor: '#f8fafc',
+                                bodyColor: '#94a3b8',
+                                borderColor: '#1e293b',
+                                borderWidth: 1,
+                                titleFont: { family: 'JetBrains Mono', size: 11 },
+                                bodyFont: { family: 'JetBrains Mono', size: 11 },
+                                padding: 12,
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { color: 'rgba(30, 41, 59, 0.5)' },
+                                ticks: { color: '#475569', font: { family: 'JetBrains Mono', size: 9 }, maxTicksLimit: 8 }
+                            },
+                            y: {
+                                grid: { color: 'rgba(30, 41, 59, 0.5)' },
+                                ticks: { color: '#475569', font: { family: 'JetBrains Mono', size: 9 } }
+                            }
+                        }
+                    }
+                });
+
+                return () => chartInstance.current?.destroy();
+            }, [data]);
+
+            return <canvas ref={chartRef}></canvas>;
+        };
+
+        const RSIChart = ({ data }) => {
+            const chartRef = useRef(null);
+            const chartInstance = useRef(null);
+
+            useEffect(() => {
+                if (!data || !data.length) return;
+
+                const ctx = chartRef.current.getContext('2d');
+                if (chartInstance.current) chartInstance.current.destroy();
+
+                const closes = data.map(d => d.close);
+                const rsi = TechnicalIndicators.rsi(closes);
+
+                chartInstance.current = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.map(d => d.date),
+                        datasets: [{
+                            data: rsi,
+                            borderColor: '#a855f7',
+                            backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 0,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { display: false },
+                            y: {
+                                min: 0, max: 100,
+                                grid: { color: 'rgba(30, 41, 59, 0.5)' },
+                                ticks: { color: '#475569', font: { size: 9 }, stepSize: 30 }
+                            }
+                        }
+                    }
+                });
+
+                return () => chartInstance.current?.destroy();
+            }, [data]);
+
+            return <canvas ref={chartRef} style={{ height: '80px' }}></canvas>;
+        };
+
+        // ============================================
+        // MAIN APP
+        // ============================================
+        
+        const App = () => {
+            const [selectedStock, setSelectedStock] = useState('AAPL');
+            const [loading, setLoading] = useState(true);
+            const [stockData, setStockData] = useState(null);
+            const [prediction, setPrediction] = useState(null);
+            const [indicators, setIndicators] = useState(null);
+            const [backtest, setBacktest] = useState(null);
+            const [featureImportance, setFeatureImportance] = useState({});
+            
+            const model = useMemo(() => new SimplifiedMLModel(), []);
+
+            useEffect(() => {
+                const loadData = async () => {
+                    setLoading(true);
+                    
+                    try {
+                        // Fetch all data from backend API in parallel
+                        const [stockDataResponse, predictionResponse, indicatorsResponse, backtestResponse] = await Promise.all([
+                            fetchStockData(selectedStock),
+                            fetchPrediction(selectedStock),
+                            fetchIndicators(selectedStock),
+                            fetchBacktest(selectedStock)
+                        ]);
+                        
+                        // Process stock data - convert backend format to frontend format
+                        const processedData = stockDataResponse.map(item => ({
+                            date: item.date,
+                            open: item.open,
+                            high: item.high,
+                            low: item.low,
+                            close: item.close,
+                            volume: item.volume
+                        }));
+                        
+                        setStockData(processedData);
+                        
+                        // Set indicators from API response
+                        if (indicatorsResponse.indicators) {
+                            const ind = indicatorsResponse.indicators;
+                            setIndicators({
+                                rsi: ind.rsi,
+                                macd: ind.macd,
+                                macdSignal: ind.macd_signal,
+                                stochK: ind.stoch_k,
+                                stochD: ind.stoch_d,
+                                williamsR: ind.williams_r,
+                                cci: ind.cci,
+                                atr: ind.atr,
+                                sma20: ind.sma_20,
+                                sma50: ind.sma_50
+                            });
+                        }
+                        
+                        // Set prediction from API response
+                        if (predictionResponse) {
+                            setPrediction({
+                                signal: predictionResponse.signal,
+                                confidence: predictionResponse.confidence,
+                                accuracy: predictionResponse.model_accuracy,
+                                analysis: predictionResponse.analysis,
+                                targets: predictionResponse.price_targets
+                            });
+                            
+                            // Set feature importance if available
+                            if (predictionResponse.feature_importance) {
+                                // Convert backend format to frontend format
+                                const importance = {};
+                                Object.entries(predictionResponse.feature_importance).forEach(([key, value]) => {
+                                    // Convert snake_case to Title Case for display
+                                    const displayName = key.split('_').map(w => 
+                                        w.charAt(0).toUpperCase() + w.slice(1)
+                                    ).join(' ');
+                                    importance[displayName] = parseFloat(value) || 0;
+                                });
+                                setFeatureImportance(importance);
+                            } else {
+                                // Default feature importance if not available
+                                setFeatureImportance({
+                                    'RSI': 18.5,
+                                    'MACD': 15.2,
+                                    'Stochastic': 12.8,
+                                    'Momentum': 11.4,
+                                    'Trend': 10.9,
+                                    'Williams R': 9.7,
+                                    'CCI': 8.5,
+                                    'Volatility': 7.2,
+                                    'ATR': 5.8
+                                });
+                            }
+                        }
+                        
+                        // Set backtest results
+                        if (backtestResponse) {
+                            setBacktest({
+                                strategyReturn: backtestResponse.total_return || 0,
+                                buyHoldReturn: backtestResponse.buy_hold_return || 0,
+                                totalTrades: backtestResponse.total_trades || 0,
+                                finalEquity: backtestResponse.final_equity || 0
+                            });
+                        }
+                        
+                    } catch (error) {
+                        console.error('Error loading data:', error);
+                        alert(`Error loading data: ${error.message}\n\nMake sure the Flask backend is running on ${API_BASE_URL}`);
+                    } finally {
+                        setLoading(false);
+                    }
+                };
+                
+                loadData();
+            }, [selectedStock]);
+
+            const getSignalClass = (s) => s === 'BUY' ? 'buy' : (s === 'SELL' ? 'sell' : 'hold');
+            const getTagClass = (v) => ['BULLISH', 'POSITIVE', 'OVERSOLD'].includes(v) ? 'bullish' : 
+                                       ['BEARISH', 'NEGATIVE', 'OVERBOUGHT', 'HIGH'].includes(v) ? 'bearish' : 'neutral';
+            const getIndicatorStatus = (name, val) => {
+                if (name === 'rsi') return val > 70 ? 'bearish' : val < 30 ? 'bullish' : 'neutral';
+                if (name === 'stochK') return val > 80 ? 'bearish' : val < 20 ? 'bullish' : 'neutral';
+                if (name === 'williamsR') return val > -20 ? 'bearish' : val < -80 ? 'bullish' : 'neutral';
+                if (name === 'cci') return val > 100 ? 'bearish' : val < -100 ? 'bullish' : 'neutral';
+                return 'neutral';
+            };
+            const getIndicatorLabel = (name, val) => {
+                const status = getIndicatorStatus(name, val);
+                if (status === 'bullish') return name === 'rsi' || name === 'stochK' ? 'Oversold' : 'Bullish';
+                if (status === 'bearish') return name === 'rsi' || name === 'stochK' ? 'Overbought' : 'Bearish';
+                return 'Neutral';
+            };
+
+            // Get price info from stock data
+            const currentPrice = stockData?.[stockData.length - 1]?.close;
+            const prevPrice = stockData?.[stockData.length - 2]?.close;
+            const priceChange = currentPrice && prevPrice ? ((currentPrice - prevPrice) / prevPrice * 100).toFixed(2) : 
+                               (stockData && stockData.length > 0 && stockData[0].price_change) ? 
+                               parseFloat(stockData[0].price_change).toFixed(2) : '0.00';
+
+            return (
+                <div className="app">
+                    <header className="header">
+                        <div className="brand">
+                            <div className="brand-logo">AT</div>
+                            <div>
+                                <div className="brand-name">AlgoTrade Pro</div>
+                                <div className="brand-tag">ML-Powered Trading Signals</div>
+                            </div>
+                        </div>
+                        <div className="header-info">
+                            <div className="header-stat">
+                                <div className="header-stat-label">Model</div>
+                                <div className="header-stat-value">Gradient Boosting</div>
+                            </div>
+                            <div className="header-stat">
+                                <div className="header-stat-label">Data Source</div>
+                                <div className="header-stat-value" style={{color: 'var(--accent-green-bright)'}}>Yahoo Finance API</div>
+                            </div>
+                        </div>
+                    </header>
+
+                    <div className="stock-tabs">
+                        {STOCKS.map(s => (
+                            <button
+                                key={s.symbol}
+                                className={`stock-tab ${selectedStock === s.symbol ? 'active' : ''}`}
+                                onClick={() => setSelectedStock(s.symbol)}
+                            >
+                                {s.symbol}
+                            </button>
+                        ))}
+                    </div>
+
+                    {loading ? (
+                        <Loading text="Analyzing market data and training model..." />
+                    ) : (
+                        <div className="main-layout">
+                            <div>
+                                {/* Price Chart Card */}
+                                <div className="card" style={{ marginBottom: '20px' }}>
+                                    <div className="card-header">
+                                        <div className="card-title">
+                                            <div className="card-icon">📈</div>
+                                            {selectedStock} — Price Analysis
+                                        </div>
+                                        <div className="price-header">
+                                            <span className="price-current">${currentPrice ? currentPrice.toFixed(2) : '0.00'}</span>
+                                            <span className={`price-change ${parseFloat(priceChange) >= 0 ? 'up' : 'down'}`}>
+                                                {parseFloat(priceChange) >= 0 ? '+' : ''}{priceChange}%
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="card-body">
+                                        <div className="chart-wrap">
+                                            <PriceChart data={stockData} />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* RSI Chart */}
+                                <div className="card" style={{ marginBottom: '20px' }}>
+                                    <div className="card-header">
+                                        <div className="card-title">
+                                            <div className="card-icon">📊</div>
+                                            RSI Indicator
+                                        </div>
+                                        <span style={{ fontFamily: 'JetBrains Mono', fontSize: '14px', color: indicators?.rsi > 70 ? 'var(--accent-red)' : indicators?.rsi < 30 ? 'var(--accent-green)' : 'var(--text-secondary)' }}>
+                                            {indicators?.rsi?.toFixed(1)}
+                                        </span>
+                                    </div>
+                                    <div className="card-body" style={{ padding: '16px 24px' }}>
+                                        <RSIChart data={stockData} />
+                                    </div>
+                                </div>
+
+                                {/* Indicators Grid */}
+                                <div className="card">
+                                    <div className="card-header">
+                                        <div className="card-title">
+                                            <div className="card-icon">⚙️</div>
+                                            Technical Indicators
+                                        </div>
+                                    </div>
+                                    <div className="card-body">
+                                        <div className="indicators-grid">
+                                            <div className="indicator-box">
+                                                <div className="indicator-name">RSI (14)</div>
+                                                <div className="indicator-value">{indicators?.rsi?.toFixed(2)}</div>
+                                                <span className={`indicator-status ${getIndicatorStatus('rsi', indicators?.rsi)}`}>
+                                                    {getIndicatorLabel('rsi', indicators?.rsi)}
+                                                </span>
+                                            </div>
+                                            <div className="indicator-box">
+                                                <div className="indicator-name">MACD</div>
+                                                <div className="indicator-value">{indicators?.macd?.toFixed(3)}</div>
+                                                <span className={`indicator-status ${indicators?.macd > indicators?.macdSignal ? 'bullish' : 'bearish'}`}>
+                                                    {indicators?.macd > indicators?.macdSignal ? 'Bullish' : 'Bearish'}
+                                                </span>
+                                            </div>
+                                            <div className="indicator-box">
+                                                <div className="indicator-name">Stochastic %K</div>
+                                                <div className="indicator-value">{indicators?.stochK?.toFixed(2)}</div>
+                                                <span className={`indicator-status ${getIndicatorStatus('stochK', indicators?.stochK)}`}>
+                                                    {getIndicatorLabel('stochK', indicators?.stochK)}
+                                                </span>
+                                            </div>
+                                            <div className="indicator-box">
+                                                <div className="indicator-name">Williams %R</div>
+                                                <div className="indicator-value">{indicators?.williamsR?.toFixed(2)}</div>
+                                                <span className={`indicator-status ${getIndicatorStatus('williamsR', indicators?.williamsR)}`}>
+                                                    {getIndicatorLabel('williamsR', indicators?.williamsR)}
+                                                </span>
+                                            </div>
+                                            <div className="indicator-box">
+                                                <div className="indicator-name">CCI</div>
+                                                <div className="indicator-value">{indicators?.cci?.toFixed(2)}</div>
+                                                <span className={`indicator-status ${getIndicatorStatus('cci', indicators?.cci)}`}>
+                                                    {getIndicatorLabel('cci', indicators?.cci)}
+                                                </span>
+                                            </div>
+                                            <div className="indicator-box">
+                                                <div className="indicator-name">ATR</div>
+                                                <div className="indicator-value">{indicators?.atr?.toFixed(2)}</div>
+                                                <span className="indicator-status neutral">Volatility</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="right-panel">
+                                {/* Signal Card */}
+                                <div className="card">
+                                    <div className="card-header">
+                                        <div className="card-title">
+                                            <div className="card-icon">🎯</div>
+                                            ML Signal
+                                        </div>
+                                    </div>
+                                    <div className="signal-display">
+                                        <div className={`signal-badge ${getSignalClass(prediction?.signal)}`}>
+                                            {prediction?.signal}
+                                        </div>
+                                        
+                                        <div className="confidence-section">
+                                            <div className="confidence-label">Confidence Level</div>
+                                            <div className="confidence-track">
+                                                <div className="confidence-fill" style={{ width: `${prediction?.confidence || 0}%` }}></div>
+                                            </div>
+                                            <div className="confidence-value">{prediction?.confidence?.toFixed(1)}%</div>
+                                        </div>
+
+                                        <div className="analysis-tags">
+                                            {prediction?.analysis && Object.entries(prediction.analysis).map(([k, v]) => (
+                                                <span key={k} className={`analysis-tag ${getTagClass(v)}`}>{k}: {v}</span>
+                                            ))}
+                                        </div>
+
+                                        <div className="model-stats">
+                                            <div className="accuracy-ring" style={{ '--pct': prediction?.accuracy || 0 }}>
+                                                <div className="accuracy-ring-inner">{prediction?.accuracy}%</div>
+                                            </div>
+                                            <div className="model-info-text">
+                                                <div className="model-info-name">Model Accuracy</div>
+                                                <div className="model-info-detail">Trained on 200 days</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Price Targets */}
+                                <div className="card">
+                                    <div className="card-header">
+                                        <div className="card-title">
+                                            <div className="card-icon">🎯</div>
+                                            Price Targets
+                                        </div>
+                                    </div>
+                                    <div className="card-body">
+                                        <div className="targets-grid">
+                                            <div className="target-row">
+                                                <span className="target-label">Take Profit</span>
+                                                <span className="target-price green">${prediction?.targets?.takeProfit}</span>
+                                            </div>
+                                            <div className="target-row">
+                                                <span className="target-label">Resistance</span>
+                                                <span className="target-price green">${prediction?.targets?.resistance}</span>
+                                            </div>
+                                            <div className="target-row">
+                                                <span className="target-label">Support</span>
+                                                <span className="target-price red">${prediction?.targets?.support}</span>
+                                            </div>
+                                            <div className="target-row">
+                                                <span className="target-label">Stop Loss</span>
+                                                <span className="target-price red">${prediction?.targets?.stopLoss}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Backtest */}
+                                <div className="card">
+                                    <div className="card-header">
+                                        <div className="card-title">
+                                            <div className="card-icon">📈</div>
+                                            Backtest Results
+                                        </div>
+                                    </div>
+                                    <div className="card-body">
+                                        <div className="backtest-grid">
+                                            <div className="backtest-box">
+                                                <div className={`backtest-value ${backtest?.strategyReturn >= 0 ? 'positive' : 'negative'}`}>
+                                                    {backtest?.strategyReturn >= 0 ? '+' : ''}{backtest?.strategyReturn}%
+                                                </div>
+                                                <div className="backtest-label">Strategy</div>
+                                            </div>
+                                            <div className="backtest-box">
+                                                <div className={`backtest-value ${backtest?.buyHoldReturn >= 0 ? 'positive' : 'negative'}`}>
+                                                    {backtest?.buyHoldReturn >= 0 ? '+' : ''}{backtest?.buyHoldReturn}%
+                                                </div>
+                                                <div className="backtest-label">Buy & Hold</div>
+                                            </div>
+                                            <div className="backtest-box">
+                                                <div className="backtest-value">{backtest?.totalTrades}</div>
+                                                <div className="backtest-label">Trades</div>
+                                            </div>
+                                            <div className="backtest-box">
+                                                <div className="backtest-value">${parseInt(backtest?.finalEquity).toLocaleString()}</div>
+                                                <div className="backtest-label">Final Value</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Feature Importance */}
+                                <div className="card">
+                                    <div className="card-header">
+                                        <div className="card-title">
+                                            <div className="card-icon">⚡</div>
+                                            Feature Importance
+                                        </div>
+                                    </div>
+                                    <div className="card-body">
+                                        <div className="feature-list">
+                                            {Object.entries(featureImportance)
+                                                .sort((a, b) => b[1] - a[1])
+                                                .map(([name, value]) => (
+                                                    <div key={name} className="feature-row">
+                                                        <span className="feature-name">{name}</span>
+                                                        <div className="feature-track">
+                                                            <div className="feature-bar" style={{ width: `${value * 5}%` }}></div>
+                                                        </div>
+                                                        <span className="feature-pct">{value}%</span>
+                                                    </div>
+                                                ))
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
